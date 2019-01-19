@@ -5,26 +5,52 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+  public static final String url = "http://cdatanorthwindsampleapiserver.azurewebsites.net/api.rsc/";
+  public static final String categories = "categories";
+  public static final String orders = "orders";
+  public static final String order_details = "order_details";
+  public static final String products = "products";
+
+  public static final String authHeaderName = "x-cdata-authtoken";
+  public static final String authHeaderValue = "XXXXXXXXXXX";
+
+  public static void main(String[] args) throws Exception {
 
         OkHttpClient client = new OkHttpClient();
-        String url = "http://cdatanorthwindsampleapiserver.azurewebsites.net/api.rsc";
-        String authHeaderName = "x-cdata-authtoken";
-        String authHeaderValue = "XXXXXXXXXXXXXX";
 
-        Request request = new Request.Builder().addHeader(authHeaderName,authHeaderValue).url(url).build();
+        Response ordersResponse = client.newCall(
+                new Request.Builder().addHeader(authHeaderName,authHeaderValue).url(url + orders).build()
+                ).execute();
 
-        Response response = client.newCall(request).execute();
+        Response orderDetailsResponse = client.newCall(
+                new Request.Builder().addHeader(authHeaderName,authHeaderValue).url(url + order_details).build()
+                ).execute();
 
         Gson gson = new Gson();
 
-        MainObject responseObject = gson.fromJson(response.body().string(), MainObject.class);
+        OrderRootObject orders = gson.fromJson(ordersResponse.body().string(), OrderRootObject.class);
+        OrderDetailRootObject orderDetails = gson.fromJson(orderDetailsResponse.body().string(), OrderDetailRootObject.class);
 
-        for (Category category : responseObject.value) {
-            System.out.println("category_id : " + category.category_id);
-            System.out.println("category_name : " + category.category_name);
+        for (OrderDetail orderDetail : orderDetails.Value) {
+            List<Order> order = orders.Value.stream().filter(x -> x.OrderId.equals(orderDetail.OrderId)).collect(Collectors.toList());
+
+            if(order.isEmpty())
+              continue;
+
+            System.out.println("--------------------------------------------");
+            System.out.println("OrderId : " + order.get(0).OrderId);
+            System.out.println("CustomerId : " + order.get(0).CustomerId);
+            System.out.println("EmployeeId : " + order.get(0).EmployeeId);
+            System.out.println("Discount : " + orderDetail.Discount);
+            System.out.println("ProductId : " + orderDetail.ProductId);
+            System.out.println("Quantity : " + orderDetail.Quantity);
+            System.out.println("UnitPrice : " + orderDetail.UnitPrice);
         }
     }
 }

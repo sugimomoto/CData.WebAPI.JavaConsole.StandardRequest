@@ -4,10 +4,10 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public class MainObject {
+public class OrderRootObject {
     @SerializedName("@odata.context")
-    public String country;
+    public String Context;
 
     @SerializedName("value")
-    public List<Category> value;
+    public List<Order> Value;
 }
